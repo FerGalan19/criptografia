@@ -1,5 +1,5 @@
 import time
-from bank_system import function
+from sistema_banco import function
 
 Function = function.Function()
 
@@ -33,13 +33,13 @@ class Main(object):
                 break
 
     def UI(self):
-        print("*****************************************************")
-        print("** Bienvenido a - Col china - China Merchants Bank **")
-        print("** Consulta de apertura de cuenta (0) (1) **")
-        print("** Depósito (2) Retiro (3) **")
-        print("** Cambiar contraseña (5) **")
-        print("** Salir (q) **")
-        print("*****************************************************")
+        print("################################################")
+        print("## Bienvenido a Banco Santander ##")
+        print("## 0. Apertura de cuenta  1. Consultar saldo ##")
+        print("## 2. Ingresar dinero   3. Retirar dinero ##")
+        print("## 5. Cambiar contraseña ##")
+        print("## Salir (q) ##")
+        print("################################################")
 
 if __name__ == "__main__":
     Main().run()
