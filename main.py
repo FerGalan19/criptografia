@@ -1,11 +1,15 @@
 from csv import DictWriter
+import cryptography
+import os
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 import csv
 
 # list of column names
 
 # Dictionary that we want to add as a new row
 usuario = input("Nombre Usuario: ")
-dict = {'Usuario': usuario, 'Contraseña': input("Contraseña Usuario: ")}
+contraseña = input("Contraseña Usuario: ")
+dict = {'Usuario': usuario, 'Contraseña': contraseña}
 
 csvfile_writer = open('countries.csv', 'a+')
 fieldnames = ['Usuario', 'Contraseña', "Saldo"]
@@ -13,29 +17,49 @@ writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
 
 csvfile_reader = open('countries.csv', 'r')
 reader = csv.reader(csvfile_reader)
-lista = []
+lista_usuarios = []
+lista_contraseñas = []
+lista_saldos = []
 for row in reader:
-    lista.append(row[0])
+    lista_usuarios.append(row[0])
+    lista_contraseñas.append(row[1])
+    lista_saldos.append(row[2])
 
-print(lista)
+print(lista_usuarios)
+print(lista_contraseñas)
+print(lista_saldos)
+
 
 encontrado = False
+contraseña_encontrada = False
 
-if dict['Usuario'] in lista:
-        print("Usuario ya registrado")
-        encontrado = True
+if usuario in lista_usuarios:
+        posicion = lista_usuarios.index(usuario)
+        print(posicion)
+        while contraseña_encontrada is False:
+         if contraseña == lista_contraseñas[posicion]:
+            #print(contraseña)
+            #print(lista_contraseñas[posicion])
+            print("Usuario ya registrado")
+            contraseña_encontrada = True
+            encontrado = True
+         else:
+            print("Usuario ya registrado, pero contraseña incorrecta")
+            contraseña = input("Introduce de nuevo la contraseña: ")
+            #print(contraseña)
+            contraseña_encontrada = False
 else:
         print("Usuario no encontrado, por favor registrate")
-        usuario_nuevo = input("Nombre Usuario: ")
+        usuario_nuevo = input("Nombre nuevo de usuario: ")
         dict1 = writer.writerows([{'Usuario': usuario_nuevo,
                            'Contraseña': input("Introduce nueva contraseña usuario: "), "Saldo":2000}])
         encontrado = False
 
 if encontrado is False:
-    print(usuario_nuevo)
+    print("Bienvenido " + usuario_nuevo + " su saldo es de ")
 
 else:
-    print(usuario)
+    print("Bienvenido " + usuario + " su saldo es de ")
 
 """
 def login():
