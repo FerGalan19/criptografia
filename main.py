@@ -7,6 +7,28 @@ import csv
 
 # list of column names
 
+def depositar(saldo_anterior):
+  cantidad = int(input('¿Cuánto desea depositar?: '))
+  if cantidad <= 0:
+    print('Usted está intentando depositar una cantidad menor o igual a cero')
+  else:
+    global saldo
+    saldo = saldo_anterior + float(cantidad)
+    print(f'Su nuevo saldo es: {saldo}')
+  return saldo
+
+def retirar(saldo_anterior):
+  cantidad = int(input('¿Cuánto desea retirar?: '))
+  global saldo
+  if cantidad > saldo or cantidad <= 0:
+    print('Ha ocurrido un error, cantidad no suficiente, vuelve a intriducir una cantidad')
+    retirar()
+  else:
+    saldo = saldo_anterior - float(cantidad)
+    print(f'Su nuevo saldo es: {saldo}')
+  return saldo
+
+
 # Dictionary that we want to add as a new row
 usuario = input("Nombre Usuario: ")
 contraseña = input("Contraseña Usuario: ")
@@ -44,16 +66,38 @@ if usuario in lista_usuarios:
             print("Usuario ya registrado")
             contraseña_encontrada = True
             encontrado = True
+            saldo_usuario = lista_saldos[posicion]
+            print("Que operación quieres realizar: ")
+            print('1 - Depositar | 2 - Retirar | 3 - Salir')
+            operación = int(input('¿Qué desea hacer?: '))
+            if operación == 1:
+                print('Usted eligió Depositar')
+                cantidad = float(input('¿Cuánto desea depositar?: '))
+                if cantidad <= 0:
+                    print('Usted está intentando depositar una cantidad menor o igual a cero')
+                else:
+                    saldo = float(saldo_usuario) + cantidad
+                    print(f'Su nuevo saldo es: {saldo}')
+                print(saldo)
          else:
             print("Usuario ya registrado, pero contraseña incorrecta")
             contraseña = input("Introduce de nuevo la contraseña: ")
             #print(contraseña)
             contraseña_encontrada = False
 else:
+        usuario_nuevo_encontrado = False
         print("Usuario no encontrado, por favor registrate")
         usuario_nuevo = input("Nombre nuevo de usuario: ")
-        dict1 = writer.writerows([{'Usuario': usuario_nuevo,
-                           'Contraseña': input("Introduce nueva contraseña usuario: "), "Saldo":2000}])
+        contraseña_nueva = input("Introduce nueva contraseña usuario: ")
+        while usuario_nuevo_encontrado is False:
+            if usuario_nuevo in lista_usuarios:
+                 print("Nombre de usuario ya registrada, introduce otro nuevo porfavor")
+                 usuario_nuevo = input("Nombre nuevo de usuario: ")
+                 usuario_nuevo_encontrado = False
+            else:
+                dict1 = writer.writerows([{'Usuario': usuario_nuevo,
+                           'Contraseña': contraseña_nueva, "Saldo":2000}])
+                usuario_nuevo_encontrado = True
         encontrado = False
 
 if encontrado is False:
@@ -61,6 +105,8 @@ if encontrado is False:
 
 else:
     print("Bienvenido " + usuario + " su saldo es de ")
+
+
 
 """
 def login():
@@ -86,6 +132,7 @@ def opciones():
     print('Usted eligió Salir - Hasta luego!')
   else:
     print('Ha ocurrido un error')
+
 
 def depositar(saldo_anterior):
   cantidad = int(input('¿Cuánto desea depositar?: '))
@@ -115,4 +162,6 @@ def repetir():
   return login()
 
 login()
+
 """
+
