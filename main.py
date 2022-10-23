@@ -1,45 +1,93 @@
-import time
-from sistema_banco import function
+from csv import DictWriter
+import csv
 
-Function = function.Function()
+# list of column names
 
-class Main(object):
-    def run(self):
-        while True:
-            print("Saltando a la interfaz principal, por favor espere", end="")
-            for i in range(5):
-                print(".", end="", flush=True)
-                time.sleep(0.4)
-            print("")
-            self.UI()
-            number = input("Ingrese el número de función que desea seleccionar:")
-            if number not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'q']:
-                print("¡Ingrese el código correcto!")
-            if number == "0":
-                Function.create_user()
-            elif number == "1":
-                Function.query()
-            elif number == "2":
-                Function.deposit()
-            elif number == "3":
-                Function.withdrawal()
-            elif number == "4":
-                Function.change_password()
-            elif number == "q":
-                print("Saliendo del sistema, por favor espere", end=" ")
-                for i in range(6):
-                    print(".", end=" ", flush=True)
-                    time.sleep(0.5)
-                break
+# Dictionary that we want to add as a new row
+usuario = input("Nombre Usuario: ")
+dict = {'Usuario': usuario, 'Contraseña': input("Contraseña Usuario: ")}
 
-    def UI(self):
-        print("################################################")
-        print("## Bienvenido a Banco Santander ##")
-        print("## 0. Apertura de cuenta  1. Consultar saldo ##")
-        print("## 2. Ingresar dinero   3. Retirar dinero ##")
-        print("## 5. Cambiar contraseña ##")
-        print("## Salir (q) ##")
-        print("################################################")
+csvfile_writer = open('countries.csv', 'a+')
+fieldnames = ['Usuario', 'Contraseña', "Saldo"]
+writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
 
-if __name__ == "__main__":
-    Main().run()
+csvfile_reader = open('countries.csv', 'r')
+reader = csv.reader(csvfile_reader)
+lista = []
+for row in reader:
+    lista.append(row[0])
+
+print(lista)
+
+encontrado = False
+
+if dict['Usuario'] in lista:
+        print("Usuario ya registrado")
+        encontrado = True
+else:
+        print("Usuario no encontrado, por favor registrate")
+        usuario_nuevo = input("Nombre Usuario: ")
+        dict1 = writer.writerows([{'Usuario': usuario_nuevo,
+                           'Contraseña': input("Introduce nueva contraseña usuario: "), "Saldo":2000}])
+        encontrado = False
+
+if encontrado is False:
+    print(usuario_nuevo)
+
+else:
+    print(usuario)
+
+"""
+def login():
+  user = input('Escriba su nombre de usuario: ')
+  password = input('Escriba su contraseña: ')
+  if usuarios[0] == user and contraseñas[0] == password:
+    print(f'Bienvenido {usuarios} su saldo es: {float(saldo)}')
+    opciones()
+  else:
+    print('Usuario o contraseña inválido')
+    login()
+
+def opciones():
+  print('1 - Depositar | 2 - Retirar | 3 - Salir')
+  operación = int(input('¿Qué desea hacer?: '))
+  if operación == 1:
+    print('Usted eligió Depositar')
+    depositar(saldo)
+  elif operación == 2:
+    print('Usted eligió Retirar')
+    retirar(saldo)
+  elif operación == 3:
+    print('Usted eligió Salir - Hasta luego!')
+  else:
+    print('Ha ocurrido un error')
+
+def depositar(saldo_anterior):
+  cantidad = int(input('¿Cuánto desea depositar?: '))
+  if cantidad <= 0:
+    print('Usted está intentando depositar una cantidad menor o igual a cero')
+  else:
+    global saldo
+    saldo = saldo_anterior + float(cantidad)
+    print(f'Su nuevo saldo es: {saldo}')
+    repetir()
+
+def retirar(saldo_anterior):
+  cantidad = int(input('¿Cuánto desea retirar?: '))
+  global saldo
+  if cantidad > saldo or cantidad <= 0:
+    print('Ha ocurrido un error, cantidad no suficiente, vuelve a intriducir una cantidad')
+    retirar()
+  else:
+    saldo = saldo_anterior - float(cantidad)
+    print(f'Su nuevo saldo es: {saldo}')
+    repetir()
+
+def repetir():
+  pregunta = input('¿Desea hacer otra operación?: ')
+  while pregunta == 'si':
+    return opciones()
+  return login()
+
+login()
+"""
