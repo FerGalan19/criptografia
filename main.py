@@ -4,6 +4,7 @@ import os
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 import csv
 
+
 # list of column names
 
 # Dictionary that we want to add as a new row
