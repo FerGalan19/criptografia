@@ -1,10 +1,10 @@
 from csv import DictWriter
 import cryptography
 import os
-from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
 import csv
-
-
 # list of column names
 
 def depositar(saldo_anterior):
@@ -29,13 +29,53 @@ def retirar(saldo_anterior):
   return saldo
 
 
+class PBKDF2:
+    def __init__(self, salt):
+        self.pbk = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000, )
+
+    def derive(self, string):
+        encoded_string = string.encode('utf-8')
+        return (self.pbk.derive(encoded_string)).hex()
+
+    def verify(self, string, derived_key):
+        encoded_string = string.encode('utf-8')
+        encoded_key = bytes.fromhex(derived_key)
+        try:
+            self.pbk.verify(encoded_string, encoded_key)
+            return True
+        except:
+            return False
+
+
+def crear_usuario(usuario, contraseña, saldo):
+    salt = os.urandom(16)
+    kdf = PBKDF2(salt)
+    resumen_contraseña = kdf.derive(contraseña)
+    writer.writerows([{'Usuario': usuario, 'Contraseña': resumen_contraseña,
+                              "Saldo": saldo,"Salt": salt.hex()}])
+
+def validar_contraseña(contraseña, key, salt):
+    salt = bytes.fromhex(salt)
+    kdf = PBKDF2(salt)
+    kdf = PBKDF2(salt)
+
+    if kdf.verify(contraseña, key ):
+        return True
+    else:
+        return False
+
+
 # Dictionary that we want to add as a new row
 usuario = input("Nombre Usuario: ")
 contraseña = input("Contraseña Usuario: ")
 dict = {'Usuario': usuario, 'Contraseña': contraseña}
 
 csvfile_writer = open('countries.csv', 'a+')
-fieldnames = ['Usuario', 'Contraseña', "Saldo"]
+fieldnames = ['Usuario', 'Contraseña', "Saldo", "Salt"]
 writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
 
 csvfile_reader = open('countries.csv', 'r')
@@ -43,14 +83,18 @@ reader = csv.reader(csvfile_reader)
 lista_usuarios = []
 lista_contraseñas = []
 lista_saldos = []
+lista_salt = []
+
 for row in reader:
     lista_usuarios.append(row[0])
     lista_contraseñas.append(row[1])
     lista_saldos.append(row[2])
+    lista_salt.append(row[3])
 
 print(lista_usuarios)
 print(lista_contraseñas)
 print(lista_saldos)
+print(lista_salt)
 
 
 encontrado = False
@@ -59,8 +103,8 @@ contraseña_encontrada = False
 if usuario in lista_usuarios:
         posicion = lista_usuarios.index(usuario)
         print(posicion)
-        while contraseña_encontrada is False:
-         if contraseña == lista_contraseñas[posicion]:
+        while contraseña_encontrada is False:       # contraseña == lista_contraseñas[posicion]
+         if validar_contraseña(contraseña, lista_contraseñas[posicion], lista_salt[posicion]):
             #print(contraseña)
             #print(lista_contraseñas[posicion])
             print("Usuario ya registrado")
@@ -95,8 +139,7 @@ else:
                  usuario_nuevo = input("Nombre nuevo de usuario: ")
                  usuario_nuevo_encontrado = False
             else:
-                dict1 = writer.writerows([{'Usuario': usuario_nuevo,
-                           'Contraseña': contraseña_nueva, "Saldo":2000}])
+                crear_usuario(usuario_nuevo, contraseña_nueva, 2000)
                 usuario_nuevo_encontrado = True
         encontrado = False
 
@@ -105,6 +148,34 @@ if encontrado is False:
 
 else:
     print("Bienvenido " + usuario + " su saldo es de ")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
