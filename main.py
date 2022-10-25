@@ -68,6 +68,21 @@ def validar_contraseña(contraseña, key, salt):
     else:
         return False
 
+def cambiar_saldo(saldo_nuevo,saldo, usuario, contraseñas, salt):
+
+    csvfile_reader = open("countries.csv", 'r')
+    reader = csv.reader(csvfile_reader)
+
+    csvfile_writer = open('countries.csv', 'a+')
+    fieldnames = ['Usuario', 'Contraseña', "Saldo", "Salt"]
+    writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
+
+    for row in reader:
+        print(row[0])
+        if row[0] == usuario:
+            row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
+            csv.writer(csvfile_writer).writerow(row)
+
 
 # Dictionary that we want to add as a new row
 usuario = input("Nombre Usuario: ")
@@ -121,7 +136,8 @@ if usuario in lista_usuarios:
                     print('Usted está intentando depositar una cantidad menor o igual a cero')
                 else:
                     saldo = float(saldo_usuario) + cantidad
-                    print(f'Su nuevo saldo es: {saldo}')
+                    cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion], lista_contraseñas[posicion], lista_salt[posicion])
+                    print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
                 print(saldo)
          else:
             print("Usuario ya registrado, pero contraseña incorrecta")
