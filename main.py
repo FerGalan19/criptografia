@@ -1,34 +1,9 @@
-from csv import DictWriter
-import cryptography
 import os
 import pandas as pd
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 import csv
-# list of column names
-
-def depositar(saldo_anterior):
-  cantidad = int(input('¿Cuánto desea depositar?: '))
-  if cantidad <= 0:
-    print('Usted está intentando depositar una cantidad menor o igual a cero')
-  else:
-    global saldo
-    saldo = saldo_anterior + float(cantidad)
-    print(f'Su nuevo saldo es: {saldo}')
-  return saldo
-
-def retirar(saldo_anterior):
-  cantidad = int(input('¿Cuánto desea retirar?: '))
-  global saldo
-  if cantidad > saldo or cantidad <= 0:
-    print('Ha ocurrido un error, cantidad no suficiente, vuelve a intriducir una cantidad')
-    retirar()
-  else:
-    saldo = saldo_anterior - float(cantidad)
-    print(f'Su nuevo saldo es: {saldo}')
-  return saldo
-
 
 class PBKDF2:
     def __init__(self, salt):
@@ -83,6 +58,30 @@ def cambiar_saldo(saldo_nuevo,saldo, usuario):
             row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
             csv.writer(csvfile_writer).writerow(row)
 
+def depositar(saldo_usuario):
+
+  print('Usted eligió Depositar')
+  cantidad = float(input('¿Cuánto desea depositar?: '))
+  if cantidad <= 0:
+      print('Usted está intentando depositar una cantidad menor o igual a cero')
+  else:
+      saldo = float(saldo_usuario) + cantidad
+      cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion])
+      print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+  print(saldo)
+
+def retirar(saldo_usuario):
+
+    print('Usted eligió Retirar')
+    cantidad = float(input('¿Cuánto desea retirar?: '))
+    if cantidad <= 0:
+        print('Usted está intentando depositar una cantidad menor o igual a cero')
+    else:
+        saldo = float(saldo_usuario) - cantidad
+        cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion])
+        print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+    print(saldo)
+
 
 
 # Dictionary that we want to add as a new row
@@ -130,17 +129,16 @@ if usuario in lista_usuarios:
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
+
             if operación == 1:
-                print('Usted eligió Depositar')
-                cantidad = float(input('¿Cuánto desea depositar?: '))
-                if cantidad <= 0:
-                    print('Usted está intentando depositar una cantidad menor o igual a cero')
-                else:
-                    saldo = float(saldo_usuario) + cantidad
-                    cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion])
-                    print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
-                print(saldo)
+
+                depositar(saldo_usuario)
+
+            if operación == 2:
+
+                retirar(saldo_usuario)
          else:
+
             print("Usuario ya registrado, pero contraseña incorrecta")
             contraseña = input("Introduce de nuevo la contraseña: ")
             #print(contraseña)
@@ -167,6 +165,7 @@ else:
     print("Bienvenido " + usuario + " su saldo es de ")
 
 
+#Elimina usuarios duplicados al añadir usuario
 
 df = pd.read_csv("countries.csv", sep=",", header=None)
 print(df)
@@ -174,35 +173,6 @@ resultado = df.drop_duplicates(0, keep="last")
 print(resultado)
 
 resultado.to_csv("countries.csv", sep=",", header=None, index=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 """
