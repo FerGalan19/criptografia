@@ -1,6 +1,7 @@
 from csv import DictWriter
 import cryptography
 import os
+import pandas as pd
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -61,27 +62,27 @@ def crear_usuario(usuario, contraseña, saldo):
 def validar_contraseña(contraseña, key, salt):
     salt = bytes.fromhex(salt)
     kdf = PBKDF2(salt)
-    kdf = PBKDF2(salt)
 
     if kdf.verify(contraseña, key ):
         return True
     else:
         return False
 
-def cambiar_saldo(saldo_nuevo,saldo, usuario, contraseñas, salt):
+def cambiar_saldo(saldo_nuevo,saldo, usuario):
 
     csvfile_reader = open("countries.csv", 'r')
     reader = csv.reader(csvfile_reader)
 
+
     csvfile_writer = open('countries.csv', 'a+')
-    fieldnames = ['Usuario', 'Contraseña', "Saldo", "Salt"]
-    writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
+    csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
 
     for row in reader:
         print(row[0])
         if row[0] == usuario:
             row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
             csv.writer(csvfile_writer).writerow(row)
+
 
 
 # Dictionary that we want to add as a new row
@@ -136,7 +137,7 @@ if usuario in lista_usuarios:
                     print('Usted está intentando depositar una cantidad menor o igual a cero')
                 else:
                     saldo = float(saldo_usuario) + cantidad
-                    cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion], lista_contraseñas[posicion], lista_salt[posicion])
+                    cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion])
                     print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
                 print(saldo)
          else:
@@ -164,6 +165,15 @@ if encontrado is False:
 
 else:
     print("Bienvenido " + usuario + " su saldo es de ")
+
+
+
+df = pd.read_csv("countries.csv", sep=",", header=None)
+print(df)
+resultado = df.drop_duplicates(0, keep="last")
+print(resultado)
+
+resultado.to_csv("countries.csv", sep=",", header=None, index=False)
 
 
 
