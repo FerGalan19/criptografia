@@ -1,17 +1,19 @@
 import os
 import pandas as pd
+import base64
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
+from cryptography.fernet import Fernet
 import csv
 
 class PBKDF2:
     def __init__(self, salt):
         self.pbk = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
-            length=32,
+            length=16,
             salt=salt,
-            iterations=100000, )
+            iterations=480000,)        # Recomendación de iteraciones Django Julio de 2022
 
     def derive(self, string):
         encoded_string = string.encode('utf-8')
@@ -28,20 +30,39 @@ class PBKDF2:
 
 
 def crear_usuario(usuario, contraseña, saldo):
+    # Cifrado contraseña
     salt = os.urandom(16)
     kdf = PBKDF2(salt)
     resumen_contraseña = kdf.derive(contraseña)
+
+    # Creamos la llave de cifrado de saldo
+    key = base64.urlsafe_b64encode(resumen_contraseña.encode())
+    saldo_cifrado = cifrar_saldo(saldo, key)
+
     writer.writerows([{'Usuario': usuario, 'Contraseña': resumen_contraseña,
-                              "Saldo": saldo,"Salt": salt.hex()}])
+                              "Saldo": saldo_cifrado,"Salt": salt.hex()}])
 
 def validar_contraseña(contraseña, key, salt):
     salt = bytes.fromhex(salt)
     kdf = PBKDF2(salt)
-
     if kdf.verify(contraseña, key ):
         return True
     else:
         return False
+
+# ***************** CIFRADO DEL SALDO *****************
+
+def cifrar_saldo(saldo, key):
+    encryptor = Fernet(key)
+    str_saldo = str(saldo)
+    hash = encryptor.encrypt(str_saldo.encode())
+
+    return hash.decode()
+
+def descrifrar_saldo(hash, key):
+    decryptor = Fernet(key)
+    saldo = decryptor.decrypt(hash.encode())
+    return saldo
 
 def cambiar_saldo(saldo_nuevo,saldo, usuario):
 
@@ -53,33 +74,49 @@ def cambiar_saldo(saldo_nuevo,saldo, usuario):
     csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
 
     for row in reader:
-        print(row[0])
+        #print(row[0])
         if row[0] == usuario:
             row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
             csv.writer(csvfile_writer).writerow(row)
 
-def depositar(saldo_usuario):
+def depositar(saldo_usuario,contraseña):
 
   print('Usted eligió Depositar')
   cantidad = float(input('¿Cuánto desea depositar?: '))
   if cantidad <= 0:
       print('Usted está intentando depositar una cantidad menor o igual a cero')
   else:
-      saldo = float(saldo_usuario) + cantidad
-      cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion])
-      print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+      # Desciframos el saldo
+      key = base64.urlsafe_b64encode(contraseña.encode())
+      saldo_descifrado = descrifrar_saldo(saldo_usuario, key)
+      saldo = float(saldo_descifrado) + cantidad
+
+      # Ciframos el saldo nuevo
+      key = base64.urlsafe_b64encode(contraseña.encode())
+      saldo_cifrado = cifrar_saldo(saldo, key)
+
+      cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
+      #print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
   print(saldo)
 
-def retirar(saldo_usuario):
-
+def retirar(saldo_usuario, contraseña):
     print('Usted eligió Retirar')
     cantidad = float(input('¿Cuánto desea retirar?: '))
     if cantidad <= 0:
         print('Usted está intentando depositar una cantidad menor o igual a cero')
     else:
-        saldo = float(saldo_usuario) - cantidad
-        cambiar_saldo(saldo, saldo_usuario, lista_usuarios[posicion])
-        print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+        # Desciframos el saldo
+        key = base64.urlsafe_b64encode(contraseña.encode())
+        saldo_descifrado = descrifrar_saldo(saldo_usuario, key)
+
+        saldo = float(saldo_descifrado) - cantidad
+
+        # Ciframos el saldo nuevo
+        key = base64.urlsafe_b64encode(contraseña.encode())
+        saldo_cifrado = cifrar_saldo(saldo, key)
+
+        cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
+        #print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
     print(saldo)
 
 
@@ -106,42 +143,40 @@ for row in reader:
     lista_saldos.append(row[2])
     lista_salt.append(row[3])
 
+""""
 print(lista_usuarios)
 print(lista_contraseñas)
 print(lista_saldos)
 print(lista_salt)
-
+"""
 
 encontrado = False
 contraseña_encontrada = False
 
 if usuario in lista_usuarios:
         posicion = lista_usuarios.index(usuario)
-        print(posicion)
-        while contraseña_encontrada is False:       # contraseña == lista_contraseñas[posicion]
+        #print(posicion)
+        while contraseña_encontrada is False:
          if validar_contraseña(contraseña, lista_contraseñas[posicion], lista_salt[posicion]):
-            #print(contraseña)
-            #print(lista_contraseñas[posicion])
             print("Usuario ya registrado")
             contraseña_encontrada = True
             encontrado = True
             saldo_usuario = lista_saldos[posicion]
+            contraseña = lista_contraseñas[posicion]
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
 
             if operación == 1:
-
-                depositar(saldo_usuario)
+                depositar(saldo_usuario, contraseña)
 
             if operación == 2:
-
-                retirar(saldo_usuario)
+                retirar(saldo_usuario, contraseña)
          else:
 
             print("Usuario ya registrado, pero contraseña incorrecta")
             contraseña = input("Introduce de nuevo la contraseña: ")
-            #print(contraseña)
+
             contraseña_encontrada = False
 else:
         usuario_nuevo_encontrado = False
@@ -168,67 +203,10 @@ else:
 #Elimina usuarios duplicados al añadir usuario
 
 df = pd.read_csv("countries.csv", sep=",", header=None)
-print(df)
+#print(df)
 resultado = df.drop_duplicates(0, keep="last")
-print(resultado)
+#print(resultado)
 
 resultado.to_csv("countries.csv", sep=",", header=None, index=False)
 
-
-"""
-def login():
-  user = input('Escriba su nombre de usuario: ')
-  password = input('Escriba su contraseña: ')
-  if usuarios[0] == user and contraseñas[0] == password:
-    print(f'Bienvenido {usuarios} su saldo es: {float(saldo)}')
-    opciones()
-  else:
-    print('Usuario o contraseña inválido')
-    login()
-
-def opciones():
-  print('1 - Depositar | 2 - Retirar | 3 - Salir')
-  operación = int(input('¿Qué desea hacer?: '))
-  if operación == 1:
-    print('Usted eligió Depositar')
-    depositar(saldo)
-  elif operación == 2:
-    print('Usted eligió Retirar')
-    retirar(saldo)
-  elif operación == 3:
-    print('Usted eligió Salir - Hasta luego!')
-  else:
-    print('Ha ocurrido un error')
-
-
-def depositar(saldo_anterior):
-  cantidad = int(input('¿Cuánto desea depositar?: '))
-  if cantidad <= 0:
-    print('Usted está intentando depositar una cantidad menor o igual a cero')
-  else:
-    global saldo
-    saldo = saldo_anterior + float(cantidad)
-    print(f'Su nuevo saldo es: {saldo}')
-    repetir()
-
-def retirar(saldo_anterior):
-  cantidad = int(input('¿Cuánto desea retirar?: '))
-  global saldo
-  if cantidad > saldo or cantidad <= 0:
-    print('Ha ocurrido un error, cantidad no suficiente, vuelve a intriducir una cantidad')
-    retirar()
-  else:
-    saldo = saldo_anterior - float(cantidad)
-    print(f'Su nuevo saldo es: {saldo}')
-    repetir()
-
-def repetir():
-  pregunta = input('¿Desea hacer otra operación?: ')
-  while pregunta == 'si':
-    return opciones()
-  return login()
-
-login()
-
-"""
 
