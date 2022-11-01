@@ -35,12 +35,15 @@ def crear_usuario(usuario, contraseña, saldo):
     kdf = PBKDF2(salt)
     resumen_contraseña = kdf.derive(contraseña)
 
-    # Creamos la llave de cifrado de saldo
-    key = base64.urlsafe_b64encode(resumen_contraseña.encode())
-    saldo_cifrado = cifrar_saldo(saldo, key)
+    # Cifraframos el saldo
+    salt_saldo = os.urandom(16)
+    kdf_saldo = PBKDF2(salt_saldo)
+    resumen = kdf_saldo.derive(contraseña)
+
+    saldo_cifrado = cifrar_saldo(saldo, resumen)
 
     writer.writerows([{'Usuario': usuario, 'Contraseña': resumen_contraseña,
-                              "Saldo": saldo_cifrado,"Salt": salt.hex()}])
+                              'Saldo': saldo_cifrado,'Salt': salt.hex(),'Salt saldo': salt_saldo.hex()}])
 
 def validar_contraseña(contraseña, key, salt):
     salt = bytes.fromhex(salt)
@@ -52,14 +55,16 @@ def validar_contraseña(contraseña, key, salt):
 
 # ***************** CIFRADO DEL SALDO *****************
 
-def cifrar_saldo(saldo, key):
+def cifrar_saldo(saldo,resumen):
+    key = base64.urlsafe_b64encode(resumen.encode())
     encryptor = Fernet(key)
     str_saldo = str(saldo)
     hash = encryptor.encrypt(str_saldo.encode())
 
     return hash.decode()
 
-def descrifrar_saldo(hash, key):
+def descrifrar_saldo(hash, resumen):
+    key = base64.urlsafe_b64encode(resumen.encode())
     decryptor = Fernet(key)
     saldo = decryptor.decrypt(hash.encode())
     return saldo
@@ -79,7 +84,7 @@ def cambiar_saldo(saldo_nuevo,saldo, usuario):
             row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
             csv.writer(csvfile_writer).writerow(row)
 
-def depositar(saldo_usuario,contraseña):
+def depositar(saldo_usuario,contraseña, salt_saldo):
 
   print('Usted eligió Depositar')
   cantidad = float(input('¿Cuánto desea depositar?: '))
@@ -87,33 +92,38 @@ def depositar(saldo_usuario,contraseña):
       print('Usted está intentando depositar una cantidad menor o igual a cero')
   else:
       # Desciframos el saldo
-      key = base64.urlsafe_b64encode(contraseña.encode())
-      saldo_descifrado = descrifrar_saldo(saldo_usuario, key)
+      salt_saldo = bytes.fromhex(salt_saldo)
+      kdf_saldo = PBKDF2(salt_saldo)
+      resumen = kdf_saldo.derive(contraseña)
+
+      saldo_descifrado = descrifrar_saldo(saldo_usuario, resumen)
+
       saldo = float(saldo_descifrado) + cantidad
 
       # Ciframos el saldo nuevo
-      key = base64.urlsafe_b64encode(contraseña.encode())
-      saldo_cifrado = cifrar_saldo(saldo, key)
+
+      saldo_cifrado = cifrar_saldo(saldo, resumen)
 
       cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
       #print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
   print(saldo)
 
-def retirar(saldo_usuario, contraseña):
+def retirar(saldo_usuario, contraseña, salt_saldo):
     print('Usted eligió Retirar')
     cantidad = float(input('¿Cuánto desea retirar?: '))
     if cantidad <= 0:
         print('Usted está intentando depositar una cantidad menor o igual a cero')
     else:
         # Desciframos el saldo
-        key = base64.urlsafe_b64encode(contraseña.encode())
-        saldo_descifrado = descrifrar_saldo(saldo_usuario, key)
+        salt_saldo = bytes.fromhex(salt_saldo)
+        kdf_saldo = PBKDF2(salt_saldo)
+        resumen = kdf_saldo.derive(contraseña)
+        saldo_descifrado = descrifrar_saldo(saldo_usuario, resumen)
 
         saldo = float(saldo_descifrado) - cantidad
 
         # Ciframos el saldo nuevo
-        key = base64.urlsafe_b64encode(contraseña.encode())
-        saldo_cifrado = cifrar_saldo(saldo, key)
+        saldo_cifrado = cifrar_saldo(saldo, resumen)
 
         cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
         #print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
@@ -127,7 +137,7 @@ contraseña = input("Contraseña Usuario: ")
 dict = {'Usuario': usuario, 'Contraseña': contraseña}
 
 csvfile_writer = open('countries.csv', 'a+')
-fieldnames = ['Usuario', 'Contraseña', "Saldo", "Salt"]
+fieldnames = ['Usuario', 'Contraseña', "Saldo", "Salt", "Salt saldo"]
 writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
 
 csvfile_reader = open('countries.csv', 'r')
@@ -136,12 +146,14 @@ lista_usuarios = []
 lista_contraseñas = []
 lista_saldos = []
 lista_salt = []
+lista_salt_saldo = []
 
 for row in reader:
     lista_usuarios.append(row[0])
     lista_contraseñas.append(row[1])
     lista_saldos.append(row[2])
     lista_salt.append(row[3])
+    lista_salt_saldo.append(row[4])
 
 """"
 print(lista_usuarios)
@@ -162,16 +174,16 @@ if usuario in lista_usuarios:
             contraseña_encontrada = True
             encontrado = True
             saldo_usuario = lista_saldos[posicion]
-            contraseña = lista_contraseñas[posicion]
+            salt_saldo = lista_salt_saldo[posicion]
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
 
             if operación == 1:
-                depositar(saldo_usuario, contraseña)
+                depositar(saldo_usuario, contraseña, salt_saldo)
 
             if operación == 2:
-                retirar(saldo_usuario, contraseña)
+                retirar(saldo_usuario, contraseña, salt_saldo)
          else:
 
             print("Usuario ya registrado, pero contraseña incorrecta")
