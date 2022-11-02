@@ -35,7 +35,7 @@ class PBKDF2:
 
 def crear_usuario(usuario, contraseña, saldo):
     # Cifrado contraseña
-    salt = os.urandom(16)
+    salt = os.urandom(32)
     kdf = PBKDF2(salt)
     resumen_contraseña = kdf.derive(contraseña)
 
@@ -65,15 +65,15 @@ def cifrar_saldo(saldo, resumen):
     key = base64.urlsafe_b64encode(resumen.encode())
     encryptor = Fernet(key)
     str_saldo = str(saldo)
-    hash = encryptor.encrypt(str_saldo.encode())
+    token = encryptor.encrypt(str_saldo.encode())           # Hemos cambiado el nombre de la variable para que se entienda mejor
 
-    return hash.decode()
+    return token.decode()
 
 
-def descrifrar_saldo(hash, resumen):
+def descrifrar_saldo(token, resumen):
     key = base64.urlsafe_b64encode(resumen.encode())
     decryptor = Fernet(key)
-    saldo = decryptor.decrypt(hash.encode())
+    saldo = decryptor.decrypt(token.encode())
     return saldo
 
 
@@ -136,6 +136,7 @@ def retirar(saldo_usuario, contraseña, salt_saldo):
 
         # Ciframos el saldo nuevo
         saldo_cifrado = cifrar_saldo(saldo, resumen)
+        print("Saldo cifrado: ", saldo_cifrado)
 
         cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
         # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
