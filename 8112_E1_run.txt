@@ -1,0 +1,2 @@
+Para la ejecución del código hemos utilizado Python 3.9, mediante la aplicación de desarrollo PyCharm.
+Como indicación a veces nos salta un error en el código, y es debido a que en el archivo cdv se añade una nueva linea sin contenido automáticamente y solo podría haber una, en caso de haber mas de una línea salta al error. Por eso si se añade otra línea se debería de borrar para el correcto funcionamiento del código
