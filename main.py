@@ -8,6 +8,7 @@ from cryptography.fernet import Fernet
 import csv
 import re
 
+
 class PBKDF2:
 
     # ***************** CRIPTOGRAFÍA *****************
@@ -57,7 +58,8 @@ def validar_contraseña(contraseña, key, salt):
     else:
         return False
 
-#***************** CIFRADO DEL SALDO *****************
+
+# ***************** CIFRADO DEL SALDO *****************
 
 def cifrar_saldo(saldo, resumen):
     key = base64.urlsafe_b64encode(resumen.encode())
@@ -76,21 +78,24 @@ def descrifrar_saldo(hash, resumen):
 
 
 def cambiar_saldo(saldo_nuevo, saldo, usuario):
+    # Abrimos csv para la lectura (data.csv)
     csvfile_reader = open("data.csv", 'r')
     reader = csv.reader(csvfile_reader)
-
+    # Abrimos csv para la escritura (data.csv)
     csvfile_writer = open('data.csv', 'a+')
     csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
-
+    # Recorremos el csv linea a linea
     for row in reader:
         # print(row[0])
         if row[0] == usuario:
             row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
             csv.writer(csvfile_writer).writerow(row)
 
-#***************** OPERACIONES CON SALDO *****************
+
+# ***************** OPERACIONES CON SALDO *****************
 
 def depositar(saldo_usuario, contraseña, salt_saldo):
+    # Función depositar para que el usuario pueda ingresar dinero a su cuenta
     print('Usted eligió Depositar')
     cantidad = float(input('¿Cuánto desea depositar?: '))
     if cantidad <= 0:
@@ -115,6 +120,7 @@ def depositar(saldo_usuario, contraseña, salt_saldo):
 
 
 def retirar(saldo_usuario, contraseña, salt_saldo):
+    # Función retirar para que el usuario pueda retirar dinero a su cuenta
     print('Usted eligió Retirar')
     cantidad = float(input('¿Cuánto desea retirar?: '))
     if cantidad <= 0:
@@ -135,7 +141,9 @@ def retirar(saldo_usuario, contraseña, salt_saldo):
         # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
     return saldo
 
+
 def consultar_saldo(saldo_usuario, contraseña, salt_saldo):
+    # Función consultar para que el usuario pueda consultar dinero a su cuenta
     print('Usted eligió consultar saldo')
     salt_saldo = bytes.fromhex(salt_saldo)
     kdf_saldo = PBKDF2(salt_saldo)
@@ -152,12 +160,14 @@ def consultar_saldo(saldo_usuario, contraseña, salt_saldo):
     # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
     return saldo
 
-#***************** APLICACIÓN BANCO *****************
+
+# ***************** APLICACIÓN BANCO *****************
 
 usuario = input("Nombre Usuario: ")
 contraseña = input("Contraseña Usuario: ")
 dict = {'Usuario': usuario, 'Contraseña': contraseña}
 
+# Abrimos csv para la lectura y escritura, y poder sobreescrbir cobre el csv (data.csv)
 csvfile_writer = open('data.csv', 'a+')
 fieldnames = ['Usuario', 'Contraseña', "Saldo", "Salt", "Salt saldo"]
 writer = csv.DictWriter(csvfile_writer, fieldnames=fieldnames)
@@ -170,7 +180,7 @@ lista_saldos = []
 lista_salt = []
 lista_salt_saldo = []
 
-#Añadimos las distintas filas del csv, para conocer las posiciones de cada dato
+# Añadimos las distintas filas del csv, para conocer las posiciones de cada dato
 for row in reader:
     lista_usuarios.append(row[0])
     lista_contraseñas.append(row[1])
@@ -189,9 +199,11 @@ print(lista_salt_saldo)
 encontrado = False
 contraseña_encontrada = False
 
+# Comprobacción para saber si el usuario esta registrado
 if usuario in lista_usuarios:
     posicion = lista_usuarios.index(usuario)
     while contraseña_encontrada is False:
+        # Usuario esta registrado
         if validar_contraseña(contraseña, lista_contraseñas[posicion], lista_salt[posicion]):
             print("Usuario ya registrado")
             contraseña_encontrada = True
@@ -205,7 +217,7 @@ if usuario in lista_usuarios:
             if operación == 1:
                 saldo = (depositar(saldo_usuario, contraseña, salt_saldo))
                 print(saldo)
-                print("Bienvenido " + usuario + "su saldo es de " + str(saldo))
+                print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
 
             if operación == 2:
                 saldo = (retirar(saldo_usuario, contraseña, salt_saldo))
@@ -217,17 +229,19 @@ if usuario in lista_usuarios:
                 print(saldo)
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
         else:
-
+            # Usuario ya registrado, contraseña incorrecta
             print("Usuario ya registrado, pero contraseña incorrecta")
             contraseña = input("Introduce de nuevo la contraseña: ")
             contraseña_encontrada = False
 
 else:
+    # Usuario no esta registrado
     usuario_nuevo_encontrado = False
     print("Usuario no encontrado, por favor registrate")
     usuario_nuevo = input("Nombre nuevo de usuario: ")
     contraseña_nueva = input("Introduce nueva contraseña usuario: ")
     pat = re.compile(r"^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,16}$")
+    # Comprobacción que el usuario no se encuentre ya registrado, y contraseña con regex correcta
     while usuario_nuevo_encontrado is False:
         if usuario_nuevo in lista_usuarios:
             print("Nombre de usuario ya registrada, introduce otro nuevo porfavor")
@@ -237,13 +251,12 @@ else:
                   "al menos un dígito, una minúscula y una mayúscula")
             contraseña_nueva = input("Introduce nueva contraseña usuario: ")
         else:
-            #Asignamos 2000 como saldo base
+            # Asignamos 2000 como saldo base
             crear_usuario(usuario_nuevo, contraseña_nueva, 2000)
             usuario_nuevo_encontrado = True
     encontrado = False
 
     print("Bienvenido " + usuario_nuevo + " su saldo es de " + str(2000))
-
 
 # Elimina usuarios duplicados al añadir usuario
 
