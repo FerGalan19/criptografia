@@ -220,6 +220,7 @@ if usuario in lista_usuarios:
             print('1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
 
+
             if operación == 1:
                 saldo = (depositar(saldo_usuario, contraseña, salt_saldo))
                 print(saldo)
