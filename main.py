@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import base64
+import time
+
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -199,6 +201,8 @@ print(lista_salt_saldo)
 
 encontrado = False
 contraseña_encontrada = False
+hora = time.strftime("%H:%M:%S")
+fecha = time.strftime("%d/%m/%y")
 
 # Comprobacción para saber si el usuario esta registrado
 if usuario in lista_usuarios:
@@ -211,6 +215,7 @@ if usuario in lista_usuarios:
             encontrado = True
             saldo_usuario = lista_saldos[posicion]
             salt_saldo = lista_salt_saldo[posicion]
+            print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
@@ -258,6 +263,7 @@ else:
     encontrado = False
 
     print("Bienvenido " + usuario_nuevo + " su saldo es de " + str(2000))
+    print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
 
 # Elimina usuarios duplicados al añadir usuario
 
