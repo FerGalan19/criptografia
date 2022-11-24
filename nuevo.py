@@ -70,4 +70,6 @@ public_key.verify(
      ),
      hashes.SHA256()
  )
+print(public_key.verify(signature, message,padding.PSS(mgf=padding.MGF1(hashes.SHA256()),salt_length=padding.PSS.MAX_LENGTH),
+     hashes.SHA256()))
 

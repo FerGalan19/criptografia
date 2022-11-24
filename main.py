@@ -138,7 +138,7 @@ def retirar(saldo_usuario, contraseña, salt_saldo):
 
         # Ciframos el saldo nuevo
         saldo_cifrado = cifrar_saldo(saldo, resumen)
-        print("Saldo cifrado: ", saldo_cifrado)
+        #print("Saldo cifrado: ", saldo_cifrado)
 
         cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
         # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
@@ -203,11 +203,13 @@ encontrado = False
 contraseña_encontrada = False
 hora = time.strftime("%H:%M:%S")
 fecha = time.strftime("%d/%m/%y")
+#Si la contraseña se introduce mas de tres veces mal, se elimina al usuario
+contador_contraseña = 0
 
 # Comprobacción para saber si el usuario esta registrado
 if usuario in lista_usuarios:
     posicion = lista_usuarios.index(usuario)
-    while contraseña_encontrada is False:
+    while contraseña_encontrada is False and contador_contraseña<3:
         # Usuario esta registrado
         if validar_contraseña(contraseña, lista_contraseñas[posicion], lista_salt[posicion]):
             print("Usuario ya registrado")
@@ -240,6 +242,12 @@ if usuario in lista_usuarios:
             print("Usuario ya registrado, pero contraseña incorrecta")
             contraseña = input("Introduce de nuevo la contraseña: ")
             contraseña_encontrada = False
+            contador_contraseña+=1
+            if contador_contraseña == 3:
+                df = pd.read_csv("data.csv", sep=",", header=None)
+                resultado = df.iloc[:-1]
+                resultado.to_csv("data.csv", sep=",", header=None, index=False)
+                print("Usuario bloqueado, por favor contacte con el banco para restablecer la cuenta")
 
 else:
     # Usuario no esta registrado
