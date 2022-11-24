@@ -1,10 +1,13 @@
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
+##GENERAR CLAVE PRIVADA##
 private_key = rsa.generate_private_key(
     public_exponent=65537,
     key_size=2048,
 )
+
+##GENERAR PEM PRIVADA##
 variable_contraseña = b"toeorkfk"
 pem_private = private_key.private_bytes(
     encoding=serialization.Encoding.PEM,
@@ -14,16 +17,18 @@ pem_private = private_key.private_bytes(
 pem_private.splitlines()[0]
 print(pem_private)
 
-f = open('pem_private.txt','wb')
+f = open('pem_private.pem','wb')
 f.write(pem_private)
 f.close()
 
-with open('pem_private.txt', 'rb') as key_file:
+##DESEREALIZAR CLAVE PRIVADA##
+with open('pem_private.pem', 'rb') as key_file:
     private_key = serialization.load_pem_private_key(
         key_file.read(),
         password = variable_contraseña,)
     print(private_key)
 
+##CREAR CLAVE PÚBLICA, CON CLAVE PRIVADA##
 public_key = private_key.public_key()
 pem_public = public_key.public_bytes(
     encoding=serialization.Encoding.PEM,
@@ -33,10 +38,11 @@ pem_public = public_key.public_bytes(
 pem_public.splitlines()[0]
 print(pem_public)
 
-f = open('pem_public.txt','wb')
+f = open('pem_public.pem','wb')
 f.write(pem_public)
 f.close()
 
+##CREAMOS FIRMA CON CLAVE PRIVADA##
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 message = b"A message I want to sign"
