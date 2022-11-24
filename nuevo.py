@@ -8,7 +8,7 @@ private_key = rsa.generate_private_key(
 )
 
 ##GENERAR PEM PRIVADA##
-variable_contraseña = b"toeorkfk"
+variable_contraseña = b"rf"
 pem_private = private_key.private_bytes(
     encoding=serialization.Encoding.PEM,
     format=serialization.PrivateFormat.PKCS8,
