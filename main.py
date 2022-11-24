@@ -2,13 +2,97 @@ import os
 import pandas as pd
 import base64
 import time
-
-
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.fernet import Fernet
 import csv
 import re
+
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet
+
+
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
+variable_contraseña = b"rf"
+
+def generar_claves():
+
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,)
+
+    pem_private = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.BestAvailableEncryption(variable_contraseña)
+    )
+    pem_private.splitlines()[0]
+    print(pem_private)
+
+    f = open('pem_private.pem', 'wb')
+    f.write(pem_private)
+    f.close()
+
+    public_key = private_key().public_key()
+    pem_public = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    pem_public.splitlines()[0]
+    print(pem_public)
+
+    f = open('pem_public.pem', 'wb')
+    f.write(pem_public)
+    f.close()
+
+def obtener_clave_privada():
+
+    with open("pem_private.pem", "rb") as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password = variable_contraseña,)
+
+    return private_key
+
+def obtener_clave_pública():
+    with open("pem_public.pem", "rb") as key_public_file:
+        public_key = load_pem_public_key(key_public_file)
+
+    return public_key
+
+def firma(mensaje_str):
+
+    mensaje_b = bytes(mensaje_str,'utf-8')
+    signature = obtener_clave_privada().sign(
+         mensaje_b,
+         padding.PSS(
+             mgf=padding.MGF1(hashes.SHA256()),
+             salt_length=padding.PSS.MAX_LENGTH
+         ),
+         hashes.SHA256()
+     )
+    return signature.hex()
+
+def verificar_firma(mensaje_str,signature):
+
+    encoded_signature = bytes.fromhex(signature)
+    encoded_message = mensaje_str.encode('utf-8')
+    try:
+        public_key = obtener_clave_pública()
+        public_key.verify(
+            encoded_signature,
+            encoded_message,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+        return True
+    except:
+        return False
 
 
 class PBKDF2:
@@ -218,6 +302,9 @@ if usuario in lista_usuarios:
             saldo_usuario = lista_saldos[posicion]
             salt_saldo = lista_salt_saldo[posicion]
             print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
+            mensaje_str = ("La fecha en la que usted se ha registrado es el " + str(fecha) + " a las " + str(hora))
+            mensaje = firma(mensaje_str)
+            print(mensaje)
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
@@ -273,6 +360,9 @@ else:
 
     print("Bienvenido " + usuario_nuevo + " su saldo es de " + str(2000))
     print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
+    mensaje_str = ("La fecha en la que usted se ha registrado es el " + str(fecha) + " a las " + str(hora))
+    mensaje = firma(mensaje_str)
+    print(mensaje)
 
 # Elimina usuarios duplicados al añadir usuario
 

@@ -28,7 +28,7 @@ with open('pem_private.pem', 'rb') as key_file:
         password = variable_contraseña,)
     print(private_key)
 
-##CREAR CLAVE PÚBLICA, CON CLAVE PRIVADA##
+##CREAR CLAVE PÚBLICA, CON CLAVE PRIVADA (PEM)##
 public_key = private_key.public_key()
 pem_public = public_key.public_bytes(
     encoding=serialization.Encoding.PEM,
