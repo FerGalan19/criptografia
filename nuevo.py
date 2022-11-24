@@ -1,21 +1,10 @@
-import os
-import pandas as pd
-import base64
-import time
-
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.fernet import Fernet
-import csv
-import re
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 
 private_key = rsa.generate_private_key(
     public_exponent=65537,
     key_size=2048,
 )
-
-from cryptography.hazmat.primitives import serialization
 variable_contraseña = b"toeorkfk"
 pem_private = private_key.private_bytes(
     encoding=serialization.Encoding.PEM,
@@ -33,6 +22,7 @@ with open('pem_private.txt', 'rb') as key_file:
     private_key = serialization.load_pem_private_key(
         key_file.read(),
         password = variable_contraseña,)
+    print(private_key)
 
 public_key = private_key.public_key()
 pem_public = public_key.public_bytes(
@@ -60,7 +50,9 @@ signature = private_key.sign(
  )
 print(signature)
 
-public_key = private_key.public_key()
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+public_key = load_pem_public_key(pem_public)
+print(public_key)
 public_key.verify(
      signature,
      message,
