@@ -59,7 +59,7 @@ def obtener_clave_privada():
 
 def obtener_clave_pública():
     with open("pem_public.pem", "rb") as key_public_file:
-        public_key = load_pem_public_key(key_public_file)
+        public_key = load_pem_public_key(key_public_file.read())
 
     return public_key
 
@@ -74,26 +74,27 @@ def firma(mensaje_str):
          ),
          hashes.SHA256()
      )
+    f = open('signature.sig', 'w')
+    f.write(str(signature))
+    f.close()
     return signature.hex()
 
-def verificar_firma(mensaje_str,signature):
+def verificar_firma(signature,mensaje_str):
 
     encoded_signature = bytes.fromhex(signature)
     encoded_message = mensaje_str.encode('utf-8')
-    try:
-        public_key = obtener_clave_pública()
-        public_key.verify(
-            encoded_signature,
-            encoded_message,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
+    public_key = obtener_clave_pública()
+    public_key.verify(
+         encoded_signature,
+         encoded_message,
+         padding.PSS(
+               mgf=padding.MGF1(hashes.SHA256()),
+               salt_length=padding.PSS.MAX_LENGTH
             ),
             hashes.SHA256()
         )
-        return True
-    except:
-        return False
+    print("Firma verificada")
+    return True
 
 
 class PBKDF2:
@@ -302,10 +303,13 @@ if usuario in lista_usuarios:
             encontrado = True
             saldo_usuario = lista_saldos[posicion]
             salt_saldo = lista_salt_saldo[posicion]
-            print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
-            mensaje_str = ("La fecha en la que usted se ha registrado es el " + str(fecha) + " a las " + str(hora))
-            mensaje = firma(mensaje_str)
-            print(mensaje)
+            print("La fecha en la que usted ha iniciado sesión es el " + fecha + " a las " + hora)
+            mensaje_str = ("La fecha en la que usted ha iniciado sesión es el " + str(fecha) + " a las " + str(hora))
+            mensaje_firmado = firma(mensaje_str)
+            f = open('mensaje.txt', 'w')
+            f.write(mensaje_str)
+            f.close()
+            print(mensaje_firmado)
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
@@ -362,8 +366,8 @@ else:
     print("Bienvenido " + usuario_nuevo + " su saldo es de " + str(2000))
     print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
     mensaje_str = ("La fecha en la que usted se ha registrado es el " + str(fecha) + " a las " + str(hora))
-    mensaje = firma(mensaje_str)
-    print(mensaje)
+    mensaje_firmado = firma(mensaje_str)
+    print(mensaje_firmado)
 
 # Elimina usuarios duplicados al añadir usuario
 
@@ -372,3 +376,9 @@ df = pd.read_csv("data.csv", sep=",", header=None)
 resultado = df.drop_duplicates(0, keep="last")
 # print(resultado)
 resultado.to_csv("data.csv", sep=",", header=None, index=False)
+
+print(mensaje_firmado)
+print(mensaje_str)
+verificar_firma(mensaje_firmado,mensaje_str)
+
+
