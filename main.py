@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
 variable_contraseña = b"rf"
+"""contraseña openssl = bancossl"""
 
 def generar_claves():
 
