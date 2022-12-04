@@ -58,7 +58,7 @@ print(signature)
 
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 public_key = load_pem_public_key(pem_public)
-print(public_key)
+
 public_key.verify(
      signature,
      message,

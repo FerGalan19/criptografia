@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
+from cryptography import x509
 
 variable_contraseña = b"rf"
 """contraseña openssl = bancossl"""
@@ -30,7 +31,6 @@ def generar_claves():
         encryption_algorithm=serialization.BestAvailableEncryption(variable_contraseña)
     )
     pem_private.splitlines()[0]
-    print(pem_private)
 
     f = open('pem_private.pem', 'wb')
     f.write(pem_private)
@@ -42,7 +42,6 @@ def generar_claves():
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
     pem_public.splitlines()[0]
-    print(pem_public)
 
     f = open('pem_public.pem', 'wb')
     f.write(pem_public)
@@ -80,22 +79,43 @@ def firma(mensaje_str):
     return signature.hex()
 
 def verificar_firma(signature,mensaje_str):
+    try:
+        encoded_signature = bytes.fromhex(signature)
+        encoded_message = mensaje_str.encode('utf-8')
+        public_key = obtener_clave_pública()
+        public_key.verify(
+             encoded_signature,
+             encoded_message,
+             padding.PSS(
+                   mgf=padding.MGF1(hashes.SHA256()),
+                   salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+        print("Firma verificada")
+        return True
+    except:
+        print("Ha habido un fallo a la hora de verificar la firma")
+        return False
 
-    encoded_signature = bytes.fromhex(signature)
-    encoded_message = mensaje_str.encode('utf-8')
-    public_key = obtener_clave_pública()
-    public_key.verify(
-         encoded_signature,
-         encoded_message,
-         padding.PSS(
-               mgf=padding.MGF1(hashes.SHA256()),
-               salt_length=padding.PSS.MAX_LENGTH
-            ),
-            hashes.SHA256()
-        )
-    print("Firma verificada")
-    return True
+def verificacion_certificados():
+    with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
+        cert_A = x509.load_pem_x509_certificate(certificado_A.read().encode('utf-8'))
 
+    with open('openssl/AC1/nuevoscerts/01.pem') as certificado_AC:
+        cert_AC = x509.load_pem_x509_certificate(certificado_AC.read().encode('utf-8'))
+
+    signature_A = cert_A.signature
+    signature_AC = cert_AC.signature
+
+    certificado_bytes_A = cert_A.tbs_certificate_bytes
+    certificado_bytes_AC = cert_AC.tbs_certificate_bytes
+
+    alg_hash_A = cert_A.signature_hash_algorithm
+    alg_hash_AC = cert_AC.signature_hash_algorithm
+
+    if((signature_A == signature_AC) and (certificado_bytes_A == certificado_bytes_AC) and (alg_hash_A == alg_hash_AC) ):
+        print("El certificado de la entidad firmante a sido verificado correctamente")
 
 class PBKDF2:
 
@@ -146,6 +166,12 @@ def validar_contraseña(contraseña, key, salt):
     else:
         return False
 
+def eliminar_usuario_duplicado():
+    df = pd.read_csv("data.csv", sep=",", header=None)
+    # print(df)
+    resultado = df.drop_duplicates(0, keep="last")
+    # print(resultado)
+    resultado.to_csv("data.csv", sep=",", header=None, index=False)
 
 # ***************** CIFRADO DEL SALDO *****************
 
@@ -178,6 +204,8 @@ def cambiar_saldo(saldo_nuevo, saldo, usuario):
         if row[0] == usuario:
             row[2] = row[2].replace(str(saldo), str(saldo_nuevo))
             csv.writer(csvfile_writer).writerow(row)
+
+    eliminar_usuario_duplicado()
 
 
 # ***************** OPERACIONES CON SALDO *****************
@@ -276,14 +304,6 @@ for row in reader:
     lista_saldos.append(row[2])
     lista_salt.append(row[3])
     lista_salt_saldo.append(row[4])
-"""
-*********************Para conocer los datos sin cifrar
-print(lista_usuarios)
-print(lista_contraseñas)
-print(lista_saldos)
-print(lista_salt)
-print(lista_salt_saldo)
-"""
 
 encontrado = False
 contraseña_encontrada = False
@@ -310,6 +330,7 @@ if usuario in lista_usuarios:
             f.write(mensaje_str)
             f.close()
             print(mensaje_firmado)
+
             print("Que operación quieres realizar: ")
             print('1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Salir')
             operación = int(input('¿Qué desea hacer?: '))
@@ -329,6 +350,7 @@ if usuario in lista_usuarios:
                 saldo = (consultar_saldo(saldo_usuario, contraseña, salt_saldo))
                 print(saldo)
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
+
         else:
             # Usuario ya registrado, contraseña incorrecta
             print("Usuario ya registrado, pero contraseña incorrecta")
@@ -372,13 +394,14 @@ else:
 # Elimina usuarios duplicados al añadir usuario
 
 df = pd.read_csv("data.csv", sep=",", header=None)
-# print(df)
 resultado = df.drop_duplicates(0, keep="last")
-# print(resultado)
 resultado.to_csv("data.csv", sep=",", header=None, index=False)
 
-print(mensaje_firmado)
-print(mensaje_str)
+# Verificación de firma
 verificar_firma(mensaje_firmado,mensaje_str)
+
+#Verificación certificados
+verificacion_certificados()
+
 
 
