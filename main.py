@@ -74,15 +74,19 @@ def firma(mensaje_str):
          hashes.SHA256()
      )
     f = open('signature.sig', 'w')
-    f.write(str(signature))
+    f.write(str(signature.hex()))
     f.close()
     return signature.hex()
 
 def verificar_firma(signature,mensaje_str):
+
     try:
+        with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
+            cert_A = x509.load_pem_x509_certificate(certificado_A.read().encode('utf-8'))
+
         encoded_signature = bytes.fromhex(signature)
         encoded_message = mensaje_str.encode('utf-8')
-        public_key = obtener_clave_pública()
+        public_key = cert_A.public_key()
         public_key.verify(
              encoded_signature,
              encoded_message,
@@ -92,30 +96,45 @@ def verificar_firma(signature,mensaje_str):
                 ),
                 hashes.SHA256()
             )
-        print("Firma verificada")
+
+        print("Firma verificados correctamente")
         return True
+
     except:
-        print("Ha habido un fallo a la hora de verificar la firma")
+        print("Firma NO verificados correctamente")
         return False
 
-def verificacion_certificados():
-    with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
-        cert_A = x509.load_pem_x509_certificate(certificado_A.read().encode('utf-8'))
 
-    with open('openssl/AC1/nuevoscerts/01.pem') as certificado_AC:
-        cert_AC = x509.load_pem_x509_certificate(certificado_AC.read().encode('utf-8'))
+def verificación_certificado():
 
-    signature_A = cert_A.signature
-    signature_AC = cert_AC.signature
+    try:
+        with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
+            cert_A = x509.load_pem_x509_certificate(certificado_A.read().encode('utf-8'))
 
-    certificado_bytes_A = cert_A.tbs_certificate_bytes
-    certificado_bytes_AC = cert_AC.tbs_certificate_bytes
+        with open('openssl/AC1/ac1cert.pem') as certificado_AC1:
+            cert_AC1 = x509.load_pem_x509_certificate(certificado_AC1.read().encode('utf-8'))
 
-    alg_hash_A = cert_A.signature_hash_algorithm
-    alg_hash_AC = cert_AC.signature_hash_algorithm
+        clave_pública_certificar = cert_AC1.public_key()
 
-    if((signature_A == signature_AC) and (certificado_bytes_A == certificado_bytes_AC) and (alg_hash_A == alg_hash_AC) ):
-        print("El certificado de la entidad firmante a sido verificado correctamente")
+        clave_pública_certificar.verify(
+            cert_A.signature,
+            cert_A.tbs_certificate_bytes,
+            padding.PKCS1v15(),
+            cert_A.signature_hash_algorithm,
+        )
+
+        clave_pública_certificar.verify(
+            cert_AC1.signature,
+            cert_AC1.tbs_certificate_bytes,
+            padding.PKCS1v15(),
+            cert_AC1.signature_hash_algorithm,
+        )
+        print("Certificados verificados correctamente")
+        return True
+
+    except:
+        print("Certificados NO verificados correctamente")
+        return False
 
 class PBKDF2:
 
@@ -401,7 +420,7 @@ resultado.to_csv("data.csv", sep=",", header=None, index=False)
 verificar_firma(mensaje_firmado,mensaje_str)
 
 #Verificación certificados
-verificacion_certificados()
+verificación_certificado()
 
 
 
