@@ -8,7 +8,6 @@ import re
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
 
-
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
@@ -16,15 +15,18 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography import x509
 
+# *************** PARTE 2: FIRMA DIGITAL Y CERTIFICADOS ***************
+
 variable_contraseña = b"rf"
 """contraseña openssl = bancossl"""
 
 def generar_claves():
-
+    """Generamos clave privada"""
     private_key = rsa.generate_private_key(
         public_exponent=65537,
-        key_size=2048,)
+        key_size=2048, )
 
+    """Serializamos la clave privada y la guardamos en un pem"""
     pem_private = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
@@ -36,7 +38,10 @@ def generar_claves():
     f.write(pem_private)
     f.close()
 
+    """Generamos la clave pública de la clave privada"""
     public_key = private_key().public_key()
+
+    """Serializamos la clave pública y la guardamos en un pem"""
     pem_public = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
@@ -49,14 +54,17 @@ def generar_claves():
 
 def obtener_clave_privada():
 
+    """Desearilazamos la clave privada"""
     with open("pem_private.pem", "rb") as key_file:
         private_key = serialization.load_pem_private_key(
             key_file.read(),
-            password = variable_contraseña,)
+            password=variable_contraseña, )
 
     return private_key
 
 def obtener_clave_pública():
+
+    """Desearilazamos la clave pública"""
     with open("pem_public.pem", "rb") as key_public_file:
         public_key = load_pem_public_key(key_public_file.read())
 
@@ -64,22 +72,24 @@ def obtener_clave_pública():
 
 def firma(mensaje_str):
 
-    mensaje_b = bytes(mensaje_str,'utf-8')
+    """Firmamos con clave privada"""
+    mensaje_b = bytes(mensaje_str, 'utf-8')
     signature = obtener_clave_privada().sign(
-         mensaje_b,
-         padding.PSS(
-             mgf=padding.MGF1(hashes.SHA256()),
-             salt_length=padding.PSS.MAX_LENGTH
-         ),
-         hashes.SHA256()
-     )
+        mensaje_b,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
     f = open('signature.sig', 'w')
     f.write(str(signature.hex()))
     f.close()
     return signature.hex()
 
-def verificar_firma(signature,mensaje_str):
+def verificar_firma(signature, mensaje_str):
 
+    """Verificamos firma con clave pública de A"""
     try:
         with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
             cert_A = x509.load_pem_x509_certificate(certificado_A.read().encode('utf-8'))
@@ -88,25 +98,26 @@ def verificar_firma(signature,mensaje_str):
         encoded_message = mensaje_str.encode('utf-8')
         public_key = cert_A.public_key()
         public_key.verify(
-             encoded_signature,
-             encoded_message,
-             padding.PSS(
-                   mgf=padding.MGF1(hashes.SHA256()),
-                   salt_length=padding.PSS.MAX_LENGTH
-                ),
-                hashes.SHA256()
-            )
+            encoded_signature,
+            encoded_message,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
 
-        print("Firma verificados correctamente")
+        print("Firma verificada correctamente")
         return True
 
     except:
-        print("Firma NO verificados correctamente")
+        print("Firma NO verificada correctamente")
         return False
 
 
 def verificación_certificado():
 
+    """Verificamos ambos certificados con clave pública de AC1 """
     try:
         with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
             cert_A = x509.load_pem_x509_certificate(certificado_A.read().encode('utf-8'))
@@ -135,6 +146,8 @@ def verificación_certificado():
     except:
         print("Certificados NO verificados correctamente")
         return False
+
+# *************** PARTE 1 ***************
 
 class PBKDF2:
 
@@ -185,7 +198,9 @@ def validar_contraseña(contraseña, key, salt):
     else:
         return False
 
+
 def eliminar_usuario_duplicado():
+
     df = pd.read_csv("data.csv", sep=",", header=None)
     # print(df)
     resultado = df.drop_duplicates(0, keep="last")
@@ -198,7 +213,7 @@ def cifrar_saldo(saldo, resumen):
     key = base64.urlsafe_b64encode(resumen.encode())
     encryptor = Fernet(key)
     str_saldo = str(saldo)
-    token = encryptor.encrypt(str_saldo.encode())           # Hemos cambiado el nombre de la variable para que se entienda mejor
+    token = encryptor.encrypt(str_saldo.encode())  # Hemos cambiado el nombre de la variable para que se entienda mejor
 
     return token.decode()
 
@@ -271,7 +286,7 @@ def retirar(saldo_usuario, contraseña, salt_saldo):
 
         # Ciframos el saldo nuevo
         saldo_cifrado = cifrar_saldo(saldo, resumen)
-        #print("Saldo cifrado: ", saldo_cifrado)
+        # print("Saldo cifrado: ", saldo_cifrado)
 
         cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
         # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
@@ -328,13 +343,13 @@ encontrado = False
 contraseña_encontrada = False
 hora = time.strftime("%H:%M:%S")
 fecha = time.strftime("%d/%m/%y")
-#Si la contraseña se introduce mas de tres veces mal, se elimina al usuario
+# Si la contraseña se introduce mas de tres veces mal, se elimina al usuario
 contador_contraseña = 0
 
 # Comprobacción para saber si el usuario esta registrado
 if usuario in lista_usuarios:
     posicion = lista_usuarios.index(usuario)
-    while contraseña_encontrada is False and contador_contraseña<3:
+    while contraseña_encontrada is False and contador_contraseña < 3:
         # Usuario esta registrado
         if validar_contraseña(contraseña, lista_contraseñas[posicion], lista_salt[posicion]):
             print("Usuario ya registrado")
@@ -344,16 +359,19 @@ if usuario in lista_usuarios:
             salt_saldo = lista_salt_saldo[posicion]
             print("La fecha en la que usted ha iniciado sesión es el " + fecha + " a las " + hora)
             mensaje_str = ("La fecha en la que usted ha iniciado sesión es el " + str(fecha) + " a las " + str(hora))
+
+            """Firmamos el mensaje y guardamos la firma y el mensaje"""
+
             mensaje_firmado = firma(mensaje_str)
             f = open('mensaje.txt', 'w')
             f.write(mensaje_str)
             f.close()
-            print(mensaje_firmado)
+
+            """Operación a realizar"""
 
             print("Que operación quieres realizar: ")
-            print('1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Salir')
+            print("1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Verificación firma | 5 - Verificación certificados | 6- Salir")
             operación = int(input('¿Qué desea hacer?: '))
-
 
             if operación == 1:
                 saldo = (depositar(saldo_usuario, contraseña, salt_saldo))
@@ -370,12 +388,20 @@ if usuario in lista_usuarios:
                 print(saldo)
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
 
+            if operación == 4:
+                # Verificación de firma
+                verificar_firma(mensaje_firmado, mensaje_str)
+
+            if operación == 5:
+                # Verificación certificados
+                verificación_certificado()
+
         else:
             # Usuario ya registrado, contraseña incorrecta
             print("Usuario ya registrado, pero contraseña incorrecta")
             contraseña = input("Introduce de nuevo la contraseña: ")
             contraseña_encontrada = False
-            contador_contraseña+=1
+            contador_contraseña += 1
             if contador_contraseña == 3:
                 df = pd.read_csv("data.csv", sep=",", header=None)
                 resultado = df.iloc[:-1]
@@ -410,17 +436,14 @@ else:
     mensaje_firmado = firma(mensaje_str)
     print(mensaje_firmado)
 
+    # Verificación de firma
+    verificar_firma(mensaje_firmado, mensaje_str)
+
+    # Verificación certificados
+    verificación_certificado()
+
 # Elimina usuarios duplicados al añadir usuario
 
 df = pd.read_csv("data.csv", sep=",", header=None)
 resultado = df.drop_duplicates(0, keep="last")
 resultado.to_csv("data.csv", sep=",", header=None, index=False)
-
-# Verificación de firma
-verificar_firma(mensaje_firmado,mensaje_str)
-
-#Verificación certificados
-verificación_certificado()
-
-
-
