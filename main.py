@@ -249,24 +249,30 @@ def depositar(saldo_usuario, contraseña, salt_saldo):
     # Función depositar para que el usuario pueda ingresar dinero a su cuenta
     print('Usted eligió Depositar')
     cantidad = float(input('¿Cuánto desea depositar?: '))
-    if cantidad <= 0:
+    # Desciframos el saldo
+    salt_saldo = bytes.fromhex(salt_saldo)
+    kdf_saldo = PBKDF2(salt_saldo)
+    resumen = kdf_saldo.derive(contraseña)
+
+    saldo_descifrado = descrifrar_saldo(saldo_usuario, resumen)
+
+    if cantidad < 0:
+
         print('Usted está intentando depositar una cantidad menor o igual a cero')
-    else:
-        # Desciframos el saldo
-        salt_saldo = bytes.fromhex(salt_saldo)
-        kdf_saldo = PBKDF2(salt_saldo)
-        resumen = kdf_saldo.derive(contraseña)
-
-        saldo_descifrado = descrifrar_saldo(saldo_usuario, resumen)
-
-        saldo = float(saldo_descifrado) + cantidad
-
+        print('Saldo no modificado')
+        saldo = float(saldo_descifrado)
         # Ciframos el saldo nuevo
-
         saldo_cifrado = cifrar_saldo(saldo, resumen)
-
         cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
         # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+
+    else:
+        saldo = float(saldo_descifrado) + cantidad
+        # Ciframos el saldo nuevo
+        saldo_cifrado = cifrar_saldo(saldo, resumen)
+        cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
+        # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+
     return saldo
 
 
@@ -274,25 +280,48 @@ def retirar(saldo_usuario, contraseña, salt_saldo):
     # Función retirar para que el usuario pueda retirar dinero a su cuenta
     print('Usted eligió Retirar')
     cantidad = float(input('¿Cuánto desea retirar?: '))
-    if cantidad <= 0:
-        print('Usted está intentando depositar una cantidad menor o igual a cero')
-    else:
-        # Desciframos el saldo
-        salt_saldo = bytes.fromhex(salt_saldo)
-        kdf_saldo = PBKDF2(salt_saldo)
-        resumen = kdf_saldo.derive(contraseña)
-        saldo_descifrado = descrifrar_saldo(saldo_usuario, resumen)
+    # Desciframos el saldo
+    salt_saldo = bytes.fromhex(salt_saldo)
+    kdf_saldo = PBKDF2(salt_saldo)
+    resumen = kdf_saldo.derive(contraseña)
 
-        saldo = float(saldo_descifrado) - cantidad
+    saldo_descifrado = descrifrar_saldo(saldo_usuario, resumen)
 
+    if float(saldo_descifrado) < -10000:
+
+        print("Usted tiene deuda de " + str(float(saldo_descifrado)) + " con el banco, no puede retirar más dinero")
+        saldo = float(saldo_descifrado)
         # Ciframos el saldo nuevo
         saldo_cifrado = cifrar_saldo(saldo, resumen)
-        # print("Saldo cifrado: ", saldo_cifrado)
-
         cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
-        # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
-    return saldo
 
+    else:
+            if cantidad < 0:
+                print('Usted está intentando retirar una cantidad menor o igual a cero')
+                print('Saldo no modificado')
+                saldo = float(saldo_descifrado)
+                # Ciframos el saldo nuevo
+                saldo_cifrado = cifrar_saldo(saldo, resumen)
+                cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
+                # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+
+            else:
+                saldo_nuevo = float(saldo_descifrado) - (cantidad)
+
+                if saldo_nuevo < -10000:
+                    print("Usted tendría una deuda de " + str(saldo_nuevo) + " con el banco, no puede retirar esa cantidad dinero")
+                    print("Saldo no modificado")
+                    saldo = float(saldo_descifrado)
+                    # Ciframos el saldo nuevo
+                    saldo_cifrado = cifrar_saldo(saldo, resumen)
+                    cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
+                else:
+                    saldo = float(saldo_descifrado) - cantidad
+                    # Ciframos el saldo nuevo
+                    saldo_cifrado = cifrar_saldo(saldo, resumen)
+                    cambiar_saldo(saldo_cifrado, saldo_usuario, lista_usuarios[posicion])
+                    # print(f'Su nuevo saldo es: {lista_saldos[posicion]}')
+    return saldo
 
 def consultar_saldo(saldo_usuario, contraseña, salt_saldo):
     # Función consultar para que el usuario pueda consultar dinero a su cuenta
@@ -371,23 +400,19 @@ if usuario in lista_usuarios:
             """Operación a realizar"""
 
             print("Que operación quieres realizar: ")
-            print(
-                "1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Verificación firma | 5 - Verificación certificados | 6 - Cerrar sesión")
+            print("1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Verificación firma | 5 - Verificación certificados | 6 - Cerrar sesión")
             operación = int(input('¿Qué desea hacer?: '))
 
             if operación == 1:
                 saldo = (depositar(saldo_usuario, contraseña, salt_saldo))
-                print(saldo)
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
 
             if operación == 2:
                 saldo = (retirar(saldo_usuario, contraseña, salt_saldo))
-                print(saldo)
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
 
             if operación == 3:
                 saldo = (consultar_saldo(saldo_usuario, contraseña, salt_saldo))
-                print(saldo)
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
 
             if operación == 4:
