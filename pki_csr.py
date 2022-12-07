@@ -1,27 +1,15 @@
 from cryptography import x509
 from cryptography.x509.oid import NameOID
-from cryptography.hazmat.primitives import hashes
-import os
-import pandas as pd
-import base64
-import time
-import csv
-import re
-
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.fernet import Fernet
-
-
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
+"""Programa para generar CertificateSigningRequestBuilder, pem"""
 
 variable_contraseña = b"rf"
 
 def obtener_clave_privada():
 
-    with open("pem_private.pem", "rb") as key_file:
+    with open("pems/pem_private.pem", "rb") as key_file:
         private_key = serialization.load_pem_private_key(
             key_file.read(),
             password = variable_contraseña,)
@@ -40,5 +28,5 @@ csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
  ])).sign(clave_privada, hashes.SHA256())
 
 # Write our CSR out to disk.
-with open("pki_csr.pem", "wb") as f:
+with open("pems/pki_csr.pem", "wb") as f:
     f.write(csr.public_bytes(serialization.Encoding.PEM))

@@ -20,6 +20,7 @@ from cryptography import x509
 variable_contraseña = b"rf"
 """contraseña openssl = bancossl"""
 
+
 def generar_claves():
     """Generamos clave privada"""
     private_key = rsa.generate_private_key(
@@ -34,7 +35,7 @@ def generar_claves():
     )
     pem_private.splitlines()[0]
 
-    f = open('pem_private.pem', 'wb')
+    f = open('pems/pem_private.pem', 'wb')
     f.write(pem_private)
     f.close()
 
@@ -48,30 +49,30 @@ def generar_claves():
     )
     pem_public.splitlines()[0]
 
-    f = open('pem_public.pem', 'wb')
+    f = open('pems/pem_public.pem', 'wb')
     f.write(pem_public)
     f.close()
 
-def obtener_clave_privada():
 
+def obtener_clave_privada():
     """Desearilazamos la clave privada"""
-    with open("pem_private.pem", "rb") as key_file:
+    with open("pems/pem_private.pem", "rb") as key_file:
         private_key = serialization.load_pem_private_key(
             key_file.read(),
             password=variable_contraseña, )
 
     return private_key
 
-def obtener_clave_pública():
 
+def obtener_clave_pública():
     """Desearilazamos la clave pública"""
-    with open("pem_public.pem", "rb") as key_public_file:
+    with open("pems/pem_public.pem", "rb") as key_public_file:
         public_key = load_pem_public_key(key_public_file.read())
 
     return public_key
 
-def firma(mensaje_str):
 
+def firma(mensaje_str):
     """Firmamos con clave privada"""
     mensaje_b = bytes(mensaje_str, 'utf-8')
     signature = obtener_clave_privada().sign(
@@ -82,13 +83,13 @@ def firma(mensaje_str):
         ),
         hashes.SHA256()
     )
-    f = open('signature.sig', 'w')
+    f = open('firma_mensaje/signature.sig', 'w')
     f.write(str(signature.hex()))
     f.close()
     return signature.hex()
 
-def verificar_firma(signature, mensaje_str):
 
+def verificar_firma(signature, mensaje_str):
     """Verificamos firma con clave pública de A"""
     try:
         with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
@@ -116,7 +117,6 @@ def verificar_firma(signature, mensaje_str):
 
 
 def verificación_certificado():
-
     """Verificamos ambos certificados con clave pública de AC1 """
     try:
         with open('openssl/A/entidad_firmante_cert.pem') as certificado_A:
@@ -146,6 +146,7 @@ def verificación_certificado():
     except:
         print("Certificados NO verificados correctamente")
         return False
+
 
 # *************** PARTE 1 ***************
 
@@ -200,12 +201,12 @@ def validar_contraseña(contraseña, key, salt):
 
 
 def eliminar_usuario_duplicado():
-
     df = pd.read_csv("data.csv", sep=",", header=None)
     # print(df)
     resultado = df.drop_duplicates(0, keep="last")
     # print(resultado)
     resultado.to_csv("data.csv", sep=",", header=None, index=False)
+
 
 # ***************** CIFRADO DEL SALDO *****************
 
@@ -363,14 +364,15 @@ if usuario in lista_usuarios:
             """Firmamos el mensaje y guardamos la firma y el mensaje"""
 
             mensaje_firmado = firma(mensaje_str)
-            f = open('mensaje.txt', 'w')
+            f = open('firma_mensaje/mensaje.txt', 'w')
             f.write(mensaje_str)
             f.close()
 
             """Operación a realizar"""
 
             print("Que operación quieres realizar: ")
-            print("1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Verificación firma | 5 - Verificación certificados | 6- Salir")
+            print(
+                "1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Verificación firma | 5 - Verificación certificados | 6 - Cerrar sesión")
             operación = int(input('¿Qué desea hacer?: '))
 
             if operación == 1:
@@ -395,6 +397,10 @@ if usuario in lista_usuarios:
             if operación == 5:
                 # Verificación certificados
                 verificación_certificado()
+
+            if operación == 6:
+                print("Sesión cerrada")
+                exit()
 
         else:
             # Usuario ya registrado, contraseña incorrecta
@@ -433,8 +439,13 @@ else:
     print("Bienvenido " + usuario_nuevo + " su saldo es de " + str(2000))
     print("La fecha en la que usted se ha registrado es el " + fecha + " a las " + hora)
     mensaje_str = ("La fecha en la que usted se ha registrado es el " + str(fecha) + " a las " + str(hora))
+
+    """Firmamos el mensaje y guardamos la firma y el mensaje"""
+
     mensaje_firmado = firma(mensaje_str)
-    print(mensaje_firmado)
+    f = open('firma_mensaje/mensaje.txt', 'w')
+    f.write(mensaje_str)
+    f.close()
 
     # Verificación de firma
     verificar_firma(mensaje_firmado, mensaje_str)
