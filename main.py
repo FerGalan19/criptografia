@@ -390,17 +390,10 @@ if usuario in lista_usuarios:
             print("La fecha en la que usted ha iniciado sesión es el " + fecha + " a las " + hora)
             mensaje_str = ("La fecha en la que usted ha iniciado sesión es el " + str(fecha) + " a las " + str(hora))
 
-            """Firmamos el mensaje y guardamos la firma y el mensaje"""
-
-            mensaje_firmado = firma(mensaje_str)
-            f = open('firma_mensaje/mensaje.txt', 'w')
-            f.write(mensaje_str)
-            f.close()
-
             """Operación a realizar"""
 
             print("Que operación quieres realizar: ")
-            print("1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Verificación firma | 5 - Verificación certificados | 6 - Cerrar sesión")
+            print("1 - Depositar | 2 - Retirar | 3 - Consultar Saldo | 4 - Firmar mensaje (fecha actual) | 5 - Verificación firma | 6 - Cerrar sesión")
             operación = int(input('¿Qué desea hacer?: '))
 
             if operación == 1:
@@ -416,12 +409,22 @@ if usuario in lista_usuarios:
                 print("Bienvenido " + usuario + " su saldo es de " + str(saldo))
 
             if operación == 4:
-                # Verificación de firma
-                verificar_firma(mensaje_firmado, mensaje_str)
+                """Firmamos el mensaje y guardamos la firma y el mensaje"""
+                mensaje_firmado = firma(mensaje_str)
+                f = open('firma_mensaje/mensaje.txt', 'w')
+                f.write(mensaje_str)
+                f.close()
+                print("Su firma en hexadecimal es la siguiente: " + mensaje_firmado)
 
             if operación == 5:
-                # Verificación certificados
-                verificación_certificado()
+                """Obtenemos el mensaje y  la firma de nuestra base de datos"""
+                archivo = open("firma_mensaje/signature.sig", "r")
+                contenido1 = archivo.read()
+
+                archivo = open("firma_mensaje/mensaje.txt", "r")
+                contenido2 = archivo.read()
+
+                verificar_firma(contenido1, contenido2)
 
             if operación == 6:
                 print("Sesión cerrada")
@@ -479,7 +482,24 @@ else:
     verificación_certificado()
 
 # Elimina usuarios duplicados al añadir usuario
-
 df = pd.read_csv("data.csv", sep=",", header=None)
 resultado = df.drop_duplicates(0, keep="last")
 resultado.to_csv("data.csv", sep=",", header=None, index=False)
+
+"""Hemos guardado un par de firmas y mensajes de usuarios para verficarlas"""
+
+"""archivo = open("firma_mensaje/firma_registro_usuario1.sig", "r")
+contenido1 = archivo.read()
+
+archivo = open("firma_mensaje/mensaje_registro_usuario1.txt", "r")
+contenido2 = archivo.read()
+
+verificar_firma(contenido1,contenido2)
+
+archivo = open("firma_mensaje/firma_registro_usuario2.sig", "r")
+contenido1 = archivo.read()
+
+archivo = open("firma_mensaje/mensaje_registro_usuario2.txt", "r")
+contenido2 = archivo.read()
+
+verificar_firma(contenido1,contenido2)"""
