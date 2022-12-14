@@ -475,8 +475,13 @@ else:
     f.write(mensaje_str)
     f.close()
 
+    archivo = open("firma_mensaje/signature.sig", "r")
+    contenido1 = archivo.read()
+
+    archivo = open("firma_mensaje/mensaje.txt", "r")
+    contenido2 = archivo.read()
     # Verificación de firma
-    verificar_firma(mensaje_firmado, mensaje_str)
+    verificar_firma(contenido1, contenido2)
 
     # Verificación certificados
     verificación_certificado()
